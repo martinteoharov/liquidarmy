@@ -368,6 +368,30 @@ const sketch = (p: any) => {
   };
 
   /**
+   * Touch support for mobile devices
+   * Map touch events to mouse events for gameplay
+   */
+  p.touchMoved = () => {
+    // Prevent default scrolling on mobile
+    return false;
+  };
+
+  p.touchStarted = () => {
+    // Handle game over restart on touch
+    if (context.gameState === GameState.GAME_OVER) {
+      startGame();
+      return false;
+    }
+    // Prevent default behavior
+    return false;
+  };
+
+  p.touchEnded = () => {
+    // Prevent default behavior
+    return false;
+  };
+
+  /**
    * Expose restart function to window for HTML integration
    */
   window.restartGame = () => {

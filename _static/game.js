@@ -577,9 +577,11 @@ var CombatSystem = class {
 // src/systems/AI.ts
 var AISystem = class {
   constructor() {
+    __publicField(this, "currentStrategy", "even" /* EVEN */);
+    __publicField(this, "strategicPosition", null);
     /**
      * Update team targets
-     * Player follows mouse, enemies target player
+     * Player follows mouse/touch, enemies use power-based AI
      */
     __publicField(this, "updateTeamTargets", (playerTeam, enemyTeam, soldiers, mapScale, offsetX, offsetY, p) => {
       playerTeam.targetX = (p.mouseX - offsetX) / mapScale;
@@ -592,7 +594,7 @@ var AISystem = class {
     });
     /**
      * Calculate optimal target position for enemy team
-     * AGGRESSIVE AI: Enemies flank and surround the player
+     * Uses power-based strategic decision making
      */
     __publicField(this, "updateEnemyTarget", (enemyTeam, soldiers, p) => {
       const playerCenter = this.calculatePlayerCenter(soldiers);
@@ -603,30 +605,194 @@ var AISystem = class {
         enemyTeam.targetY = playerCenter.y;
         return;
       }
+      const power = this.calculatePowerRatio(soldiers);
+      this.currentStrategy = this.selectStrategy(power);
       const dx = playerCenter.x - enemyCenter.x;
       const dy = playerCenter.y - enemyCenter.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
+      const angleToPlayer = Math.atan2(dy, dx);
       let targetX;
       let targetY;
-      if (dist > 200) {
-        targetX = playerCenter.x + dx / dist * 50;
-        targetY = playerCenter.y + dy / dist * 50;
-      } else if (dist > 100) {
-        const angleToPlayer = Math.atan2(dy, dx);
-        const flankDirection = Math.sin(p.frameCount * 0.03) > 0 ? 1 : -1;
-        const flankAngle = angleToPlayer + Math.PI / 3 * flankDirection;
-        const flankDist = 60;
-        targetX = playerCenter.x + Math.cos(flankAngle) * flankDist;
-        targetY = playerCenter.y + Math.sin(flankAngle) * flankDist;
-      } else {
-        const spreadAngle = p.frameCount * 0.04 + enemyTeam.targetUpdateTimer * 0.1;
-        const spreadRadius = 40;
-        targetX = playerCenter.x + Math.cos(spreadAngle) * spreadRadius;
-        targetY = playerCenter.y + Math.sin(spreadAngle) * spreadRadius;
+      let targetPos;
+      switch (this.currentStrategy) {
+        case "overwhelming" /* OVERWHELMING */:
+          targetPos = this.executeOverwhelmingStrategy(
+            playerCenter,
+            enemyCenter,
+            dist,
+            angleToPlayer,
+            p
+          );
+          targetX = targetPos.x;
+          targetY = targetPos.y;
+          break;
+        case "strong" /* STRONG */:
+          targetPos = this.executeStrongStrategy(
+            playerCenter,
+            enemyCenter,
+            dist,
+            angleToPlayer,
+            p
+          );
+          targetX = targetPos.x;
+          targetY = targetPos.y;
+          break;
+        case "even" /* EVEN */:
+          targetPos = this.executeEvenStrategy(
+            playerCenter,
+            enemyCenter,
+            dist,
+            angleToPlayer,
+            p
+          );
+          targetX = targetPos.x;
+          targetY = targetPos.y;
+          break;
+        case "weak" /* WEAK */:
+          targetPos = this.executeWeakStrategy(
+            playerCenter,
+            enemyCenter,
+            dist,
+            angleToPlayer,
+            p
+          );
+          targetX = targetPos.x;
+          targetY = targetPos.y;
+          break;
+        case "desperate" /* DESPERATE */:
+          targetPos = this.executeDesperateStrategy(
+            playerCenter,
+            enemyCenter,
+            angleToPlayer,
+            p
+          );
+          targetX = targetPos.x;
+          targetY = targetPos.y;
+          break;
       }
-      const smoothing = 0.3;
+      const smoothing = this.currentStrategy === "desperate" /* DESPERATE */ ? 0.5 : 0.3;
       enemyTeam.targetX = enemyTeam.targetX * (1 - smoothing) + targetX * smoothing;
       enemyTeam.targetY = enemyTeam.targetY * (1 - smoothing) + targetY * smoothing;
+    });
+    /**
+     * OVERWHELMING: Surround and crush with superior numbers
+     */
+    __publicField(this, "executeOverwhelmingStrategy", (playerCenter, enemyCenter, dist, angleToPlayer, p) => {
+      const surroundAngle = angleToPlayer + p.sin(p.frameCount * 0.05) * Math.PI;
+      const surroundDist = Math.max(30, dist - 80);
+      return {
+        x: playerCenter.x + Math.cos(surroundAngle) * surroundDist,
+        y: playerCenter.y + Math.sin(surroundAngle) * surroundDist
+      };
+    });
+    /**
+     * STRONG: Confident flanking and tactical encirclement
+     */
+    __publicField(this, "executeStrongStrategy", (playerCenter, enemyCenter, dist, angleToPlayer, p) => {
+      if (dist > 150) {
+        const flankDir = Math.sin(p.frameCount * 0.03) > 0 ? 1 : -1;
+        const flankAngle = angleToPlayer + Math.PI / 4 * flankDir;
+        return {
+          x: playerCenter.x + Math.cos(flankAngle) * 80,
+          y: playerCenter.y + Math.sin(flankAngle) * 80
+        };
+      } else {
+        return {
+          x: playerCenter.x + Math.cos(angleToPlayer) * 40,
+          y: playerCenter.y + Math.sin(angleToPlayer) * 40
+        };
+      }
+    });
+    /**
+     * EVEN: Tactical positioning with calculated aggression
+     */
+    __publicField(this, "executeEvenStrategy", (playerCenter, enemyCenter, dist, angleToPlayer, p) => {
+      if (dist > 200) {
+        return {
+          x: enemyCenter.x + Math.cos(angleToPlayer) * 100,
+          y: enemyCenter.y + Math.sin(angleToPlayer) * 100
+        };
+      } else if (dist > 100) {
+        const flankDir = Math.sin(p.frameCount * 0.04) > 0 ? 1 : -1;
+        const flankAngle = angleToPlayer + Math.PI / 3 * flankDir;
+        return {
+          x: playerCenter.x + Math.cos(flankAngle) * 70,
+          y: playerCenter.y + Math.sin(flankAngle) * 70
+        };
+      } else {
+        const circleAngle = angleToPlayer + Math.sin(p.frameCount * 0.06) * 0.5;
+        return {
+          x: playerCenter.x + Math.cos(circleAngle) * 60,
+          y: playerCenter.y + Math.sin(circleAngle) * 60
+        };
+      }
+    });
+    /**
+     * WEAK: Kiting and hit-and-run tactics
+     */
+    __publicField(this, "executeWeakStrategy", (playerCenter, enemyCenter, dist, angleToPlayer, p) => {
+      if (dist < 120) {
+        const retreatAngle = angleToPlayer + Math.PI;
+        return {
+          x: enemyCenter.x + Math.cos(retreatAngle) * 80,
+          y: enemyCenter.y + Math.sin(retreatAngle) * 80
+        };
+      } else {
+        const kiteAngle = angleToPlayer + Math.sin(p.frameCount * 0.08) * 1.2;
+        return {
+          x: playerCenter.x + Math.cos(kiteAngle) * 150,
+          y: playerCenter.y + Math.sin(kiteAngle) * 150
+        };
+      }
+    });
+    /**
+     * DESPERATE: Full retreat with evasive maneuvers
+     */
+    __publicField(this, "executeDesperateStrategy", (playerCenter, enemyCenter, angleToPlayer, p) => {
+      const retreatAngle = angleToPlayer + Math.PI + Math.sin(p.frameCount * 0.1) * 0.8;
+      const retreatDist = 300;
+      let targetX = enemyCenter.x + Math.cos(retreatAngle) * retreatDist;
+      let targetY = enemyCenter.y + Math.sin(retreatAngle) * retreatDist;
+      targetX = Math.max(100, Math.min(900, targetX));
+      targetY = Math.max(100, Math.min(900, targetY));
+      return { x: targetX, y: targetY };
+    });
+    /**
+     * Calculate power ratio (enemy power / player power)
+     * Considers both count and average level
+     */
+    __publicField(this, "calculatePowerRatio", (soldiers) => {
+      let playerCount = 0;
+      let playerTotalLevel = 0;
+      let enemyCount = 0;
+      let enemyTotalLevel = 0;
+      for (const soldier of soldiers) {
+        if (!soldier.alive) continue;
+        if (soldier.teamIndex === 0 /* RED */) {
+          playerCount++;
+          playerTotalLevel += soldier.level;
+        } else if (soldier.teamIndex === 1 /* BLUE */) {
+          enemyCount++;
+          enemyTotalLevel += soldier.level;
+        }
+      }
+      if (playerCount === 0) return 999;
+      if (enemyCount === 0) return 0;
+      const playerAvgLevel = playerTotalLevel / playerCount;
+      const enemyAvgLevel = enemyTotalLevel / enemyCount;
+      const playerPower = playerCount * (1 + playerAvgLevel * 0.1);
+      const enemyPower = enemyCount * (1 + enemyAvgLevel * 0.1);
+      return enemyPower / playerPower;
+    });
+    /**
+     * Select strategy based on power ratio
+     */
+    __publicField(this, "selectStrategy", (powerRatio) => {
+      if (powerRatio >= 2) return "overwhelming" /* OVERWHELMING */;
+      if (powerRatio >= 1.3) return "strong" /* STRONG */;
+      if (powerRatio >= 0.7) return "even" /* EVEN */;
+      if (powerRatio >= 0.4) return "weak" /* WEAK */;
+      return "desperate" /* DESPERATE */;
     });
     /**
      * Calculate the average position of all player soldiers
@@ -2013,24 +2179,31 @@ var UIRenderer = class {
         const elapsed = currentTime - notif.startTime;
         const progress = elapsed / notif.duration;
         if (progress < 1) {
-          const match = notif.message.match(/^(.)\s+([^:]+):\s+(.+)$/);
+          const match = notif.message.match(/^(.+?)\s+([^:]+):\s+(.+)$/);
           if (match) {
             const [, icon, name, desc] = match;
             const iconElement = document.getElementById("rewardIcon");
             const textElement = document.getElementById("rewardText");
-            if (iconElement) iconElement.textContent = icon;
+            if (iconElement) {
+              iconElement.textContent = icon.trim();
+            }
             if (textElement) {
               textElement.innerHTML = "";
-              textElement.appendChild(document.createTextNode(name));
+              const nameText = document.createTextNode(name.trim());
+              textElement.appendChild(nameText);
               const descSpan = document.createElement("span");
               descSpan.className = "reward-desc";
-              descSpan.textContent = desc;
+              descSpan.textContent = desc.trim();
               textElement.appendChild(descSpan);
             }
             notificationElement.classList.add("show");
-            if (progress > 0.8) {
-              notificationElement.classList.remove("show");
+            if (progress > 0.85) {
+              notificationElement.style.opacity = String((1 - progress) / 0.15);
+            } else {
+              notificationElement.style.opacity = "1";
             }
+          } else {
+            console.warn("Failed to parse notification:", notif.message);
           }
         } else {
           notificationElement.classList.remove("show");
@@ -2796,6 +2969,19 @@ var sketch = (p) => {
     if (context.gameState === "game_over" /* GAME_OVER */) {
       startGame();
     }
+  };
+  p.touchMoved = () => {
+    return false;
+  };
+  p.touchStarted = () => {
+    if (context.gameState === "game_over" /* GAME_OVER */) {
+      startGame();
+      return false;
+    }
+    return false;
+  };
+  p.touchEnded = () => {
+    return false;
   };
   window.restartGame = () => {
     if (window.gameConfig) {

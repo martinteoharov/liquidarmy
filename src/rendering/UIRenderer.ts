@@ -100,7 +100,7 @@ export class UIRenderer {
       if (progress < 1) {
         // Parse the message to extract icon, name, and description
         // Format: "icon Name: Description"
-        const match = notif.message.match(/^(.)\s+([^:]+):\s+(.+)$/);
+        const match = notif.message.match(/^(.+?)\s+([^:]+):\s+(.+)$/);
 
         if (match) {
           const [, icon, name, desc] = match;
@@ -108,26 +108,37 @@ export class UIRenderer {
           const iconElement = document.getElementById("rewardIcon");
           const textElement = document.getElementById("rewardText");
 
-          if (iconElement) iconElement.textContent = icon;
+          if (iconElement) {
+            iconElement.textContent = icon.trim();
+          }
 
           // Update the text content properly
           if (textElement) {
-            // Clear and rebuild to avoid accessing childNodes[0] which might not exist
+            // Clear and rebuild with proper structure
             textElement.innerHTML = "";
-            textElement.appendChild(document.createTextNode(name));
+
+            // Create text node for name
+            const nameText = document.createTextNode(name.trim());
+            textElement.appendChild(nameText);
+
+            // Create and append description span
             const descSpan = document.createElement("span");
             descSpan.className = "reward-desc";
-            descSpan.textContent = desc;
+            descSpan.textContent = desc.trim();
             textElement.appendChild(descSpan);
           }
 
           // Show with animation
           notificationElement.classList.add("show");
 
-          // Hide when almost done
-          if (progress > 0.8) {
-            notificationElement.classList.remove("show");
+          // Fade out when almost done
+          if (progress > 0.85) {
+            notificationElement.style.opacity = String((1 - progress) / 0.15);
+          } else {
+            notificationElement.style.opacity = "1";
           }
+        } else {
+          console.warn("Failed to parse notification:", notif.message);
         }
       } else {
         notificationElement.classList.remove("show");
