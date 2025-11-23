@@ -4,15 +4,17 @@
   "type": "module",
   "scripts": {
     "build": "npm run typecheck && npm run build:game",
-    "build:game": "bun build src/main.ts --outdir dist --target browser && cp dist/main.js game.js && cp node_modules/p5/lib/p5.min.js p5.min.js",
+    "build:game": "node build.js && cp node_modules/p5/lib/p5.min.js p5.min.js",
+    "build:local": "bun build src/main.ts --outdir dist --target browser && cp dist/main.js game.js && cp node_modules/p5/lib/p5.min.js p5.min.js",
     "typecheck": "tsc --noEmit",
-    "dev": "bun run build && bun run index.ts",
+    "dev": "bun run build:local && bun run index.ts",
     "start": "bun run index.ts",
     "do:build": "npm install && npm run build"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/p5": "^1.7.6"
+    "@types/p5": "^1.7.6",
+    "esbuild": "^0.24.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
