@@ -1,5 +1,4 @@
-name: liquid-wars
-region: nyc
+name: liquidarmy
 static_sites:
   - name: liquidarmy
     github:
@@ -7,8 +6,7 @@ static_sites:
       branch: main
       deploy_on_push: true
     build_command: npm install && npm run build
-    output_dir: /
-    index_document: index.html
-    error_document: index.html
-    catchall_document: index.html
+    output_dir: .
     environment_slug: node-js
+    routes:
+      - path: /
