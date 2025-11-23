@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+  <!-- Sky with gradient -->
+  <defs>
+    <linearGradient id="skyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#5d7fa3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8ba5c1;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="mountainGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a5d70;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2d3e50;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="waterGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6db3f2;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#4a9de8;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#2980b9;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="castleStone" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b7355;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5d4e37;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky -->
+  <rect width="1200" height="800" fill="url(#skyGradient)"/>
+
+  <!-- Distant mountains -->
+  <path d="M 0 400 L 200 300 L 400 350 L 600 250 L 800 320 L 1000 280 L 1200 350 L 1200 800 L 0 800 Z" fill="url(#mountainGradient)" opacity="0.6"/>
+
+  <!-- Middle mountains -->
+  <path d="M 0 500 L 150 420 L 300 450 L 500 380 L 700 440 L 900 400 L 1100 460 L 1200 450 L 1200 800 L 0 800 Z" fill="url(#mountainGradient)" opacity="0.8"/>
+
+  <!-- Ground/grass -->
+  <path d="M 0 550 L 1200 550 L 1200 800 L 0 800 Z" fill="#4a6741"/>
+
+  <!-- Castle on the left -->
+  <g id="leftCastle">
+    <!-- Main castle body -->
+    <rect x="150" y="430" width="140" height="120" fill="url(#castleStone)" stroke="#3d3226" stroke-width="2"/>
+
+    <!-- Left tower -->
+    <rect x="130" y="400" width="50" height="150" fill="url(#castleStone)" stroke="#3d3226" stroke-width="2"/>
+    <polygon points="130,400 155,370 180,400" fill="#5d4e37"/>
+    <rect x="145" y="420" width="20" height="15" fill="#2d2416"/>
+
+    <!-- Right tower -->
+    <rect x="270" y="400" width="50" height="150" fill="url(#castleStone)" stroke="#3d3226" stroke-width="2"/>
+    <polygon points="270,400 295,370 320,400" fill="#5d4e37"/>
+    <rect x="285" y="420" width="20" height="15" fill="#2d2416"/>
+
+    <!-- Center tower (tallest) -->
+    <rect x="200" y="370" width="50" height="180" fill="url(#castleStone)" stroke="#3d3226" stroke-width="2"/>
+    <polygon points="200,370 225,340 250,370" fill="#5d4e37"/>
+    <rect x="215" y="390" width="20" height="15" fill="#2d2416"/>
+
+    <!-- Gate -->
+    <rect x="195" y="510" width="60" height="40" fill="#2d2416" rx="5"/>
+
+    <!-- Windows -->
+    <rect x="160" y="450" width="12" height="18" fill="#3d5a80"/>
+    <rect x="155" y="480" width="12" height="18" fill="#3d5a80"/>
+    <rect x="282" y="450" width="12" height="18" fill="#3d5a80"/>
+    <rect x="287" y="480" width="12" height="18" fill="#3d5a80"/>
+  </g>
+
+  <!-- Castle on the right -->
+  <g id="rightCastle">
+    <!-- Main castle body -->
+    <rect x="900" y="450" width="160" height="100" fill="url(#castleStone)" stroke="#3d3226" stroke-width="2"/>
+
+    <!-- Left tower -->
+    <rect x="880" y="420" width="45" height="130" fill="url(#castleStone)" stroke="#3d3226" stroke-width="2"/>
+    <polygon points="880,420 902.5,395 925,420" fill="#5d4e37"/>
+
+    <!-- Right tower -->
+    <rect x="1035" y="420" width="45" height="130" fill="url(#castleStone)" stroke="#3d3226" stroke-width="2"/>
+    <polygon points="1035,420 1057.5,395 1080,420" fill="#5d4e37"/>
+
+    <!-- Windows -->
+    <rect x="930" y="475" width="15" height="20" fill="#3d5a80"/>
+    <rect x="960" y="475" width="15" height="20" fill="#3d5a80"/>
+    <rect x="990" y="475" width="15" height="20" fill="#3d5a80"/>
+    <rect x="1020" y="475" width="15" height="20" fill="#3d5a80"/>
+
+    <!-- Gate -->
+    <rect x="955" y="510" width="50" height="40" fill="#2d2416" rx="5"/>
+  </g>
+
+  <!-- Waterfall on mountain (left side) -->
+  <g id="waterfall1">
+    <path d="M 420 340 Q 422 380 420 420 Q 418 460 420 500"
+          stroke="url(#waterGradient)"
+          stroke-width="8"
+          fill="none"
+          opacity="0.7"/>
+    <path d="M 425 340 Q 427 380 425 420 Q 423 460 425 500"
+          stroke="url(#waterGradient)"
+          stroke-width="6"
+          fill="none"
+          opacity="0.5"/>
+    <!-- Waterfall splash -->
+    <ellipse cx="420" cy="505" rx="25" ry="8" fill="url(#waterGradient)" opacity="0.6"/>
+  </g>
+
+  <!-- Waterfall on mountain (right side) -->
+  <g id="waterfall2">
+    <path d="M 780 300 Q 782 350 780 400 Q 778 450 780 500"
+          stroke="url(#waterGradient)"
+          stroke-width="10"
+          fill="none"
+          opacity="0.7"/>
+    <path d="M 786 300 Q 788 350 786 400 Q 784 450 786 500"
+          stroke="url(#waterGradient)"
+          stroke-width="7"
+          fill="none"
+          opacity="0.5"/>
+    <!-- Waterfall splash -->
+    <ellipse cx="783" cy="505" rx="30" ry="10" fill="url(#waterGradient)" opacity="0.6"/>
+  </g>
+
+  <!-- River at bottom -->
+  <path d="M 0 580 Q 200 575 400 580 Q 600 585 800 580 Q 1000 575 1200 580 L 1200 620 Q 1000 615 800 620 Q 600 625 400 620 Q 200 615 0 620 Z"
+        fill="url(#waterGradient)" opacity="0.8"/>
+
+  <!-- Medieval knight silhouette -->
+  <g id="knight" transform="translate(550, 500)">
+    <!-- Body -->
+    <ellipse cx="0" cy="20" rx="12" ry="25" fill="#3d3226"/>
+    <!-- Head with helmet -->
+    <circle cx="0" cy="-5" r="10" fill="#5d5d5d"/>
+    <!-- Helmet plume -->
+    <path d="M -2 -12 Q 0 -20 2 -12" stroke="#8b0000" stroke-width="3" fill="none"/>
+    <!-- Shield -->
+    <ellipse cx="-15" cy="15" rx="8" ry="15" fill="#8b0000" stroke="#3d3226" stroke-width="1"/>
+    <!-- Sword -->
+    <line x1="12" y1="0" x2="12" y2="35" stroke="#c0c0c0" stroke-width="2"/>
+    <line x1="7" y1="5" x2="17" y2="5" stroke="#8b7355" stroke-width="2"/>
+    <!-- Legs -->
+    <line x1="-5" y1="45" x2="-8" y2="65" stroke="#3d3226" stroke-width="4"/>
+    <line x1="5" y1="45" x2="8" y2="65" stroke="#3d3226" stroke-width="4"/>
+  </g>
+
+  <!-- Trees in foreground -->
+  <g id="tree1">
+    <rect x="80" y="510" width="15" height="50" fill="#3d2817"/>
+    <ellipse cx="87" cy="495" rx="35" ry="40" fill="#2d5016"/>
+    <ellipse cx="87" cy="480" rx="30" ry="35" fill="#3d6b1f"/>
+  </g>
+
+  <g id="tree2">
+    <rect x="1050" y="520" width="12" height="40" fill="#3d2817"/>
+    <ellipse cx="1056" cy="510" rx="30" ry="35" fill="#2d5016"/>
+    <ellipse cx="1056" cy="495" rx="25" ry="30" fill="#3d6b1f"/>
+  </g>
+
+  <!-- Clouds -->
+  <ellipse cx="200" cy="100" rx="60" ry="30" fill="#ffffff" opacity="0.6"/>
+  <ellipse cx="240" cy="110" rx="50" ry="25" fill="#ffffff" opacity="0.6"/>
+  <ellipse cx="900" cy="80" rx="70" ry="35" fill="#ffffff" opacity="0.5"/>
+  <ellipse cx="950" cy="90" rx="55" ry="28" fill="#ffffff" opacity="0.5"/>
+
+  <!-- Liquid droplets falling (thematic) -->
+  <circle cx="350" cy="250" r="4" fill="#4a9de8" opacity="0.5"/>
+  <circle cx="360" cy="280" r="3" fill="#4a9de8" opacity="0.5"/>
+  <circle cx="720" cy="220" r="5" fill="#4a9de8" opacity="0.5"/>
+  <circle cx="730" cy="260" r="3" fill="#4a9de8" opacity="0.5"/>
+</svg>
