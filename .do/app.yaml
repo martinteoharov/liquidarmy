@@ -6,10 +6,11 @@ static_sites:
       repo: martinteoharov/liquidarmy
       branch: main
       deploy_on_push: true
-    build_command: bun install && bun run build
-    output_dir: /
+    build_command: npm install && npm run build
+    output_dir: .
     index_document: index.html
     error_document: index.html
+    catchall_document: index.html
     routes:
       - path: /
     environment_slug: node-js

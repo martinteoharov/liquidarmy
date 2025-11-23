@@ -153,7 +153,7 @@ export class Soldier {
     if (distance > 0) {
       const force = teams[this.teamIndex].isPlayer
         ? PHYSICS.CURSOR_ATTRACTION
-        : 0.2;
+        : PHYSICS.CURSOR_ATTRACTION * 1.1; // Enemies are slightly more aggressive
       const actualForce = this.isFleeing ? force * 1.5 : force;
       this.vx += (dx / distance) * actualForce;
       this.vy += (dy / distance) * actualForce;
@@ -165,10 +165,25 @@ export class Soldier {
 
     // Stop very small movements to reduce jitter when clustered
     const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-    if (speed < PHYSICS.VELOCITY_STOP_THRESHOLD && distance < 5) {
-      this.vx = 0;
-      this.vy = 0;
-      return; // Don't move if already close to target and velocity is tiny
+    if (
+      speed < PHYSICS.VELOCITY_STOP_THRESHOLD &&
+      distance < PHYSICS.TARGET_STOP_DISTANCE
+    ) {
+      this.vx *= 0.5;
+      this.vy *= 0.5;
+
+      // If velocity is extremely small, just stop completely
+      if (speed < PHYSICS.VELOCITY_STOP_THRESHOLD * 0.3) {
+        this.vx = 0;
+        this.vy = 0;
+        return;
+      }
+    }
+
+    // Apply extra damping when near target to reduce jitter
+    if (distance < PHYSICS.TARGET_STOP_DISTANCE * 2) {
+      this.vx *= PHYSICS.NEAR_TARGET_DAMPING;
+      this.vy *= PHYSICS.NEAR_TARGET_DAMPING;
     }
 
     // Apply speed multiplier from rewards (player team only)
@@ -231,6 +246,10 @@ export class Soldier {
     const nearby = spatialGrid.getNearby(this, SOLDIER.spacing * 4);
     const minDistSq = this.size * 2 * (this.size * 2);
 
+    // Check if this unit is essentially stopped
+    const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+    const isStopped = speed < PHYSICS.VELOCITY_STOP_THRESHOLD * 0.5;
+
     for (const other of nearby) {
       if (other === this || !other.alive) continue;
 
@@ -239,57 +258,64 @@ export class Soldier {
       const distSq = dx * dx + dy * dy;
 
       // Skip separation if soldiers are very close (reduces jitter)
-      if (distSq < PHYSICS.MIN_SEPARATION_DISTANCE) continue;
+      if (distSq < PHYSICS.MIN_SEPARATION_DISTANCE_SQ) continue;
 
       const isEnemy = other.teamIndex !== this.teamIndex;
 
       if (isEnemy) {
         // Hard boundary for enemies - prevent penetration
-        if (distSq < minDistSq && distSq > 0.1) {
+        if (distSq < minDistSq && distSq > 1) {
           const distance = Math.sqrt(distSq);
           const minDistance = this.size * 2;
           const overlap = minDistance - distance;
-          const invDist = 1 / distance;
 
-          // Position correction
-          const pushDistance = overlap * 0.3;
-          this.x += dx * invDist * pushDistance;
-          this.y += dy * invDist * pushDistance;
+          if (overlap > 0 && !isStopped) {
+            const invDist = 1 / distance;
 
-          // Repulsive force
-          const force = 0.8;
-          this.vx += dx * invDist * force;
-          this.vy += dx * invDist * force;
+            // Gentle position correction to prevent overlap
+            const pushDistance = overlap * 0.12;
+            this.x += dx * invDist * pushDistance;
+            this.y += dy * invDist * pushDistance;
 
-          // Damping
-          this.vx *= 0.85;
-          this.vy *= 0.85;
+            // Gentle repulsive force
+            const force = 0.25;
+            this.vx += dx * invDist * force;
+            this.vy += dy * invDist * force;
+          }
         }
       } else {
-        // Ally separation - gentler with more damping
-        if (distSq < minDistSq && distSq > 0.1) {
+        // Ally separation - very gentle to prevent jitter
+        if (distSq < minDistSq && distSq > 1) {
           const distance = Math.sqrt(distSq);
           const minDistance = this.size * 2;
           const overlap = minDistance - distance;
-          const invDist = 1 / distance;
 
-          const pushDistance = overlap * 0.4;
-          this.x += dx * invDist * pushDistance;
-          this.y += dy * invDist * pushDistance;
-
-          const force = 0.5; // Reduced from 0.8
-          this.vx += dx * invDist * force;
-          this.vy += dy * invDist * force;
-        } else {
-          const mediumRangeSq = SOLDIER.spacing * 2 * (SOLDIER.spacing * 2);
-          if (distSq < mediumRangeSq && distSq > 0.1) {
-            const distance = Math.sqrt(distSq);
-            const force =
-              (SOLDIER.spacing * 2 - distance) / (SOLDIER.spacing * 2);
-            const actualForce = force * PHYSICS.SEPARATION_FORCE * 0.5; // Reduced from 0.8
+          if (overlap > 0 && !isStopped) {
             const invDist = 1 / distance;
-            this.vx += dx * invDist * actualForce;
-            this.vy += dy * invDist * actualForce;
+
+            // Minimal position correction for allies
+            const pushDistance = overlap * 0.06;
+            this.x += dx * invDist * pushDistance;
+            this.y += dy * invDist * pushDistance;
+
+            // Very gentle force
+            const force = 0.1;
+            this.vx += dx * invDist * force;
+            this.vy += dy * invDist * force;
+          }
+        } else {
+          // Medium range soft separation (only apply if moving)
+          if (!isStopped) {
+            const mediumRangeSq = SOLDIER.spacing * 2 * (SOLDIER.spacing * 2);
+            if (distSq < mediumRangeSq && distSq > minDistSq) {
+              const distance = Math.sqrt(distSq);
+              const force =
+                (SOLDIER.spacing * 2 - distance) / (SOLDIER.spacing * 2);
+              const actualForce = force * PHYSICS.SEPARATION_FORCE * 0.15;
+              const invDist = 1 / distance;
+              this.vx += dx * invDist * actualForce;
+              this.vy += dy * invDist * actualForce;
+            }
           }
         }
       }
@@ -554,27 +580,36 @@ export class Soldier {
           const dy = this.y - closestPoint.y;
           const distSq = dx * dx + dy * dy;
 
-          if (distSq > 0.1) {
+          if (distSq > 1) {
             const dist = Math.sqrt(distSq);
-            const pushDistance = this.size + 3;
+            const pushDistance = this.size + 2;
             const invDist = 1 / dist;
 
-            this.x = closestPoint.x + dx * invDist * pushDistance;
-            this.y = closestPoint.y + dy * invDist * pushDistance;
+            // Smoothly push away from obstacle
+            const targetX = closestPoint.x + dx * invDist * pushDistance;
+            const targetY = closestPoint.y + dy * invDist * pushDistance;
 
+            // Lerp to target position to reduce jitter
+            this.x = this.x * 0.7 + targetX * 0.3;
+            this.y = this.y * 0.7 + targetY * 0.3;
+
+            // Slide along obstacle surface instead of bouncing
             const dotProduct = (this.vx * dx + this.vy * dy) * invDist;
             if (dotProduct < 0) {
-              this.vx -= dx * invDist * dotProduct;
-              this.vy -= dy * invDist * dotProduct;
+              // Remove velocity component going into obstacle
+              this.vx -= dx * invDist * dotProduct * 1.1;
+              this.vy -= dy * invDist * dotProduct * 1.1;
             }
 
-            this.vx *= 0.95;
-            this.vy *= 0.95;
+            // Less aggressive damping
+            this.vx *= 0.85;
+            this.vy *= 0.85;
           } else {
+            // Very close to obstacle - just stop
             this.x = oldX;
             this.y = oldY;
-            this.vx *= 0.5;
-            this.vy *= 0.5;
+            this.vx = 0;
+            this.vy = 0;
           }
         }
         return;

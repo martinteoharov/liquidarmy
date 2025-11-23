@@ -24,22 +24,28 @@ export const PHYSICS = {
   MAP_SIZE: 1000,
 
   /** Velocity damping per frame (0-1, lower = more friction) */
-  FRICTION: 0.92,
+  FRICTION: 0.9,
 
   /** Force pushing soldiers apart (liquid physics) */
-  SEPARATION_FORCE: 0.6,
+  SEPARATION_FORCE: 0.25,
 
   /** Attraction force toward cursor for player team */
-  CURSOR_ATTRACTION: 0.25,
+  CURSOR_ATTRACTION: 0.45,
 
   /** Spatial grid cell size for collision optimization */
   GRID_CELL_SIZE: 20,
 
-  /** Minimum distance before soldiers stop separating (reduces jitter) */
-  MIN_SEPARATION_DISTANCE: 0.5,
+  /** Minimum distance squared before soldiers separate (reduces jitter) */
+  MIN_SEPARATION_DISTANCE_SQ: 9,
 
   /** Velocity threshold for stopping movement (reduces jitter) */
-  VELOCITY_STOP_THRESHOLD: 0.05,
+  VELOCITY_STOP_THRESHOLD: 0.3,
+
+  /** Distance threshold to target before stopping attraction */
+  TARGET_STOP_DISTANCE: 15,
+
+  /** Damping applied when near target */
+  NEAR_TARGET_DAMPING: 0.75,
 } as const;
 
 // ============================================================================
@@ -63,7 +69,7 @@ export const SOLDIER: SoldierStats = {
   name: "Soldier",
   size: 8,
   spacing: 16,
-  maxSpeed: 2.5,
+  maxSpeed: 6.5,
   health: 100,
   damage: 20,
   attackRange: 20,
@@ -170,7 +176,7 @@ export const DIFFICULTY_CONFIGS: readonly DifficultyConfig[] = [
     },
     enemyHealthMultiplier: 0.8,
     enemyDamageMultiplier: 0.7,
-    enemySpeedMultiplier: 0.9,
+    enemySpeedMultiplier: 1.0,
     pointsMultiplier: 1.0,
   },
   {
@@ -186,7 +192,7 @@ export const DIFFICULTY_CONFIGS: readonly DifficultyConfig[] = [
     },
     enemyHealthMultiplier: 1.0,
     enemyDamageMultiplier: 1.0,
-    enemySpeedMultiplier: 1.0,
+    enemySpeedMultiplier: 1.15,
     pointsMultiplier: 1.5,
   },
   {
@@ -202,7 +208,7 @@ export const DIFFICULTY_CONFIGS: readonly DifficultyConfig[] = [
     },
     enemyHealthMultiplier: 1.2,
     enemyDamageMultiplier: 1.3,
-    enemySpeedMultiplier: 1.1,
+    enemySpeedMultiplier: 1.3,
     pointsMultiplier: 2.0,
   },
 ] as const;

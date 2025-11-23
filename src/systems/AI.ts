@@ -46,13 +46,13 @@ export class AISystem {
     enemyTeam.targetUpdateTimer--;
     if (enemyTeam.targetUpdateTimer <= 0) {
       this.updateEnemyTarget(enemyTeam, soldiers, p);
-      enemyTeam.targetUpdateTimer = 60; // Update every 60 frames (1 second at 60fps)
+      enemyTeam.targetUpdateTimer = 15; // Update every 15 frames (4x per second) for aggressive AI
     }
   };
 
   /**
    * Calculate optimal target position for enemy team
-   * Enemies always move toward player's army center
+   * AGGRESSIVE AI: Enemies flank and surround the player
    */
   private updateEnemyTarget = (
     enemyTeam: Team,
@@ -64,23 +64,51 @@ export class AISystem {
 
     const enemyCenter = this.calculateEnemyCenter(soldiers);
     if (!enemyCenter) {
-      // No enemies yet, just target player center
+      // No enemies yet, charge directly at player
       enemyTeam.targetX = playerCenter.x;
       enemyTeam.targetY = playerCenter.y;
       return;
     }
 
-    // Add strategic offset for flanking
-    // Create dynamic movement pattern
-    const angle = p.frameCount * 0.02;
-    const offsetAngle = angle + p.sin(p.frameCount * 0.01) * 0.5;
-    const offsetDist = 80 + p.sin(p.frameCount * 0.015) * 40;
+    // Calculate vector from enemy to player
+    const dx = playerCenter.x - enemyCenter.x;
+    const dy = playerCenter.y - enemyCenter.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
 
-    const targetX = playerCenter.x + Math.cos(offsetAngle) * offsetDist;
-    const targetY = playerCenter.y + Math.sin(offsetAngle) * offsetDist;
+    let targetX: number;
+    let targetY: number;
 
-    // Smooth transition to new target
-    const smoothing = 0.15;
+    if (dist > 200) {
+      // FAR AWAY: Aggressive charge directly at player
+      // Move PAST the player to surround them
+      targetX = playerCenter.x + (dx / dist) * 50;
+      targetY = playerCenter.y + (dy / dist) * 50;
+    } else if (dist > 100) {
+      // MEDIUM RANGE: Aggressive flanking
+      // Calculate perpendicular direction for flanking
+      const angleToPlayer = Math.atan2(dy, dx);
+
+      // Choose flanking direction (alternate based on time for dynamic movement)
+      const flankDirection = Math.sin(p.frameCount * 0.03) > 0 ? 1 : -1;
+      const flankAngle = angleToPlayer + (Math.PI / 3) * flankDirection; // 60 degree flank
+
+      // Target position that flanks the player
+      const flankDist = 60;
+      targetX = playerCenter.x + Math.cos(flankAngle) * flankDist;
+      targetY = playerCenter.y + Math.sin(flankAngle) * flankDist;
+    } else {
+      // CLOSE RANGE: Surround and overwhelm
+      // Spread out in a circle around player for maximum contact
+      const spreadAngle =
+        p.frameCount * 0.04 + enemyTeam.targetUpdateTimer * 0.1;
+      const spreadRadius = 40;
+
+      targetX = playerCenter.x + Math.cos(spreadAngle) * spreadRadius;
+      targetY = playerCenter.y + Math.sin(spreadAngle) * spreadRadius;
+    }
+
+    // Minimal smoothing for aggressive, responsive movement
+    const smoothing = 0.3;
     enemyTeam.targetX =
       enemyTeam.targetX * (1 - smoothing) + targetX * smoothing;
     enemyTeam.targetY =

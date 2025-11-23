@@ -16,20 +16,40 @@
 
 import type { P5 } from "../p5-types";
 import { RewardType, TeamId } from "../enums";
-import { REWARDS, REWARD_CONFIGS, SOLDIER, SPAWN_POSITIONS, PHYSICS } from "../config";
-import type { RewardState, ActiveReward, RewardNotification, GameContext } from "../types";
+import {
+  REWARDS,
+  REWARD_CONFIGS,
+  SOLDIER,
+  SPAWN_POSITIONS,
+  PHYSICS,
+} from "../config";
+import type {
+  RewardState,
+  ActiveReward,
+  RewardNotification,
+  GameContext,
+} from "../types";
 import { Reward } from "../entities/Reward";
 import { Soldier } from "../entities/Soldier";
+import type { Obstacle, CastleObstacle } from "../entities/Obstacle";
 
 export class RewardSystem {
   private p: P5;
   private context: GameContext;
   private activeRewards: Reward[] = [];
+  private obstacles: Array<Obstacle | CastleObstacle> = [];
 
   constructor(p: P5, context: GameContext) {
     this.p = p;
     this.context = context;
   }
+
+  /**
+   * Set obstacles for collision checking when spawning rewards
+   */
+  public setObstacles = (obstacles: Array<Obstacle | CastleObstacle>): void => {
+    this.obstacles = obstacles;
+  };
 
   /**
    * Initialize reward state
@@ -47,14 +67,61 @@ export class RewardSystem {
   public spawnReward = (waveNumber: number): void => {
     const rewardType = this.selectRandomReward(waveNumber);
 
-    // Spawn in center of map with some randomness
-    const centerX = PHYSICS.MAP_SIZE / 2;
-    const centerY = PHYSICS.MAP_SIZE / 2;
-    const offsetX = this.p.random(-100, 100);
-    const offsetY = this.p.random(-100, 100);
+    // Find a safe spawn position (not inside obstacles)
+    let spawnX = PHYSICS.MAP_SIZE / 2;
+    let spawnY = PHYSICS.MAP_SIZE / 2;
+    let attempts = 0;
+    const maxAttempts = 50;
 
-    const reward = new Reward(centerX + offsetX, centerY + offsetY, rewardType);
+    while (attempts < maxAttempts) {
+      // Try random position near center
+      const offsetX = this.p.random(-200, 200);
+      const offsetY = this.p.random(-200, 200);
+      const testX = PHYSICS.MAP_SIZE / 2 + offsetX;
+      const testY = PHYSICS.MAP_SIZE / 2 + offsetY;
+
+      // Check if position is valid (not in obstacle and within bounds)
+      if (this.isValidSpawnPosition(testX, testY)) {
+        spawnX = testX;
+        spawnY = testY;
+        break;
+      }
+
+      attempts++;
+    }
+
+    const reward = new Reward(spawnX, spawnY, rewardType);
     this.activeRewards.push(reward);
+  };
+
+  /**
+   * Check if a position is valid for spawning (not inside obstacle)
+   */
+  private isValidSpawnPosition = (x: number, y: number): boolean => {
+    // Check bounds
+    const margin = REWARDS.PICKUP_SIZE;
+    if (
+      x < margin ||
+      x > PHYSICS.MAP_SIZE - margin ||
+      y < margin ||
+      y > PHYSICS.MAP_SIZE - margin
+    ) {
+      return false;
+    }
+
+    // Check obstacles
+    const buffer = REWARDS.PICKUP_SIZE;
+    for (const obstacle of this.obstacles) {
+      const collision = obstacle.collidesWith(
+        { x, y, size: buffer } as any,
+        buffer,
+      );
+      if (collision.collides) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   /**
@@ -64,11 +131,13 @@ export class RewardSystem {
     // Calculate rarity chances based on wave
     const legendaryChance = Math.min(
       0.4,
-      REWARDS.BASE_LEGENDARY_CHANCE + (waveNumber - 1) * REWARDS.LEGENDARY_CHANCE_PER_WAVE
+      REWARDS.BASE_LEGENDARY_CHANCE +
+        (waveNumber - 1) * REWARDS.LEGENDARY_CHANCE_PER_WAVE,
     );
     const rareChance = Math.min(
       0.5,
-      REWARDS.BASE_RARE_CHANCE + (waveNumber - 1) * REWARDS.RARE_CHANCE_PER_WAVE
+      REWARDS.BASE_RARE_CHANCE +
+        (waveNumber - 1) * REWARDS.RARE_CHANCE_PER_WAVE,
     );
     const commonChance = 1 - legendaryChance - rareChance;
 
@@ -114,12 +183,12 @@ export class RewardSystem {
     // Update active timed buffs
     const currentTime = this.p.millis();
     rewardState.activeRewards = rewardState.activeRewards.filter(
-      (reward) => currentTime - reward.startTime < reward.duration
+      (reward) => currentTime - reward.startTime < reward.duration,
     );
 
     // Update notifications
     rewardState.notifications = rewardState.notifications.filter(
-      (notif) => currentTime - notif.startTime < notif.duration
+      (notif) => currentTime - notif.startTime < notif.duration,
     );
   };
 
@@ -223,7 +292,7 @@ export class RewardSystem {
         spawnPos.x + offsetX,
         spawnPos.y + offsetY,
         TeamId.RED,
-        this.context.playerTeam.color
+        this.context.playerTeam.color,
       );
 
       soldiers.push(soldier);
@@ -247,11 +316,12 @@ export class RewardSystem {
         spawnPos.x + offsetX,
         spawnPos.y + offsetY,
         TeamId.RED,
-        "#1a1a2e" // Dark shadow color
+        "#1a1a2e", // Dark shadow color
       );
 
       // Enhanced stats
-      soldier.maxHealth = SOLDIER.health * REWARDS.SHADOW_TROOP_STATS_MULTIPLIER;
+      soldier.maxHealth =
+        SOLDIER.health * REWARDS.SHADOW_TROOP_STATS_MULTIPLIER;
       soldier.health = soldier.maxHealth;
       soldier.damage = SOLDIER.damage * REWARDS.SHADOW_TROOP_STATS_MULTIPLIER;
       soldier.baseDamage = soldier.damage;
@@ -275,7 +345,7 @@ export class RewardSystem {
       spawnPos.x,
       spawnPos.y,
       TeamId.RED,
-      "#FFD700" // Gold color
+      "#FFD700", // Gold color
     );
 
     // Massively enhanced stats
@@ -374,7 +444,7 @@ export class RewardSystem {
 
     // Check if IMMORTAL_CHAMPION reward is still active
     const activeChampion = this.context.rewardState.activeRewards.find(
-      (r) => r.type === RewardType.IMMORTAL_CHAMPION
+      (r) => r.type === RewardType.IMMORTAL_CHAMPION,
     );
 
     if (!activeChampion) return false;

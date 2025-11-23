@@ -30,136 +30,110 @@ export class UIRenderer {
   ): void => {
     const { waveState, scoreState, rewardState } = context;
 
-    // Top bar background
-    const barHeight = 60;
-    p.fill(20, 20, 30, 230);
-    p.noStroke();
-    p.rect(0, 0, p.width, barHeight);
+    // Update HTML HUD elements instead of rendering on canvas
+    const hudElement = document.getElementById("gameHUD");
+    if (hudElement) {
+      hudElement.classList.remove("hidden");
 
-    // Gold border
-    p.noFill();
-    p.stroke(255, 215, 0);
-    p.strokeWeight(2);
-    p.rect(0, 0, p.width, barHeight);
+      // Update score
+      const hudScore = document.getElementById("hudScore");
+      if (hudScore) hudScore.textContent = scoreState.totalScore.toString();
 
-    // Left side - Score
-    p.fill(255, 215, 0);
-    p.textAlign(p.LEFT, p.CENTER);
-    p.textSize(24);
-    p.textStyle(p.BOLD);
-    p.noStroke();
-    p.text(`Score: ${scoreState.totalScore}`, 20, barHeight / 2 - 8);
+      // Update wave label
+      const hudWaveLabel = document.getElementById("hudWaveLabel");
+      if (hudWaveLabel) {
+        if (waveState.isTransitioning) {
+          hudWaveLabel.textContent = `Wave ${waveState.currentWave} Complete!`;
+          hudWaveLabel.style.color = "#64ff64";
+        } else {
+          hudWaveLabel.textContent = `Wave ${waveState.currentWave}`;
+          hudWaveLabel.style.color = "#c9a668";
+        }
+      }
 
-    // Kills count
-    p.fill(200, 200, 200);
-    p.textSize(14);
-    p.textStyle(p.NORMAL);
-    p.text(`Kills: ${scoreState.kills}`, 20, barHeight / 2 + 12);
+      // Update timer
+      const hudTimer = document.getElementById("hudTimer");
+      if (hudTimer) {
+        const timeColor = this.getTimeColorHex(
+          remainingTime,
+          waveState.waveDuration / 1000,
+        );
+        hudTimer.textContent = this.formatTime(remainingTime);
+        hudTimer.style.color = timeColor;
+      }
 
-    // Center - Wave number and timer
-    p.fill(255, 255, 255);
-    p.textAlign(p.CENTER, p.CENTER);
-    p.textSize(28);
-    p.textStyle(p.BOLD);
+      // Update player count
+      const hudPlayerCount = document.getElementById("hudPlayerCount");
+      if (hudPlayerCount)
+        hudPlayerCount.textContent = `${playerCount} Warriors`;
 
-    if (waveState.isTransitioning) {
-      p.fill(100, 255, 100);
-      p.text(
-        `Wave ${waveState.currentWave} Complete!`,
-        p.width / 2,
-        barHeight / 2 - 8,
-      );
-      p.fill(200, 200, 200);
-      p.textSize(14);
-      p.textStyle(p.NORMAL);
-      p.text(
-        `Next wave in ${this.formatTime(remainingTime)}`,
-        p.width / 2,
-        barHeight / 2 + 12,
-      );
-    } else {
-      p.text(`Wave ${waveState.currentWave}`, p.width / 2, barHeight / 2 - 8);
-
-      // Timer with color coding
-      const timeColor = this.getTimeColor(
-        remainingTime,
-        waveState.waveDuration / 1000,
-      );
-      p.fill(timeColor);
-      p.textSize(16);
-      p.textStyle(p.NORMAL);
-      p.text(
-        `Time: ${this.formatTime(remainingTime)}`,
-        p.width / 2,
-        barHeight / 2 + 12,
-      );
+      // Update enemy count
+      const hudEnemyCount = document.getElementById("hudEnemyCount");
+      if (hudEnemyCount) hudEnemyCount.textContent = `${enemyCount} Enemies`;
     }
 
-    // Right side - Unit counts
-    p.textAlign(p.RIGHT, p.CENTER);
-    p.textSize(20);
-    p.textStyle(p.BOLD);
-
-    // Player count (green)
-    p.fill(100, 255, 100);
-    p.text(`Your Army: ${playerCount}`, p.width - 20, barHeight / 2 - 8);
-
-    // Enemy count (red)
-    p.fill(255, 100, 100);
-    p.textSize(16);
-    p.textStyle(p.NORMAL);
-    p.text(`Enemies: ${enemyCount}`, p.width - 20, barHeight / 2 + 12);
-
-    // Render reward notifications
-    this.renderRewardNotifications(rewardState, p);
+    // Update reward notifications in HUD
+    this.updateRewardNotification(rewardState, p);
   };
 
   /**
-   * Render reward notification banners
+   * Update reward notification in HUD
    */
-  private renderRewardNotifications = (
+  private updateRewardNotification = (
     rewardState: {
       notifications: { message: string; startTime: number; duration: number }[];
     },
     p: P5,
   ): void => {
+    const notificationElement = document.getElementById("rewardNotification");
+    if (!notificationElement) return;
+
     const currentTime = p.millis();
     const notifications = rewardState.notifications;
 
-    for (let i = 0; i < notifications.length; i++) {
-      const notif = notifications[i];
+    // Show the most recent notification
+    if (notifications.length > 0) {
+      const notif = notifications[notifications.length - 1];
       const elapsed = currentTime - notif.startTime;
       const progress = elapsed / notif.duration;
 
-      // Fade in and out
-      let alpha = 255;
-      if (progress < 0.1) {
-        // Fade in (first 10%)
-        alpha = (progress / 0.1) * 255;
-      } else if (progress > 0.8) {
-        // Fade out (last 20%)
-        alpha = ((1 - progress) / 0.2) * 255;
+      if (progress < 1) {
+        // Parse the message to extract icon, name, and description
+        // Format: "icon Name: Description"
+        const match = notif.message.match(/^(.)\s+([^:]+):\s+(.+)$/);
+
+        if (match) {
+          const [, icon, name, desc] = match;
+
+          const iconElement = document.getElementById("rewardIcon");
+          const textElement = document.getElementById("rewardText");
+
+          if (iconElement) iconElement.textContent = icon;
+
+          // Update the text content properly
+          if (textElement) {
+            // Clear and rebuild to avoid accessing childNodes[0] which might not exist
+            textElement.innerHTML = "";
+            textElement.appendChild(document.createTextNode(name));
+            const descSpan = document.createElement("span");
+            descSpan.className = "reward-desc";
+            descSpan.textContent = desc;
+            textElement.appendChild(descSpan);
+          }
+
+          // Show with animation
+          notificationElement.classList.add("show");
+
+          // Hide when almost done
+          if (progress > 0.8) {
+            notificationElement.classList.remove("show");
+          }
+        }
+      } else {
+        notificationElement.classList.remove("show");
       }
-
-      // Position from top (below HUD)
-      const yOffset = 80 + i * 70;
-      const bannerHeight = 60;
-      const bannerWidth = p.width * 0.6;
-      const bannerX = p.width / 2 - bannerWidth / 2;
-
-      // Semi-transparent background
-      p.fill(20, 20, 40, alpha * 0.9);
-      p.stroke(255, 215, 0, alpha);
-      p.strokeWeight(2);
-      p.rect(bannerX, yOffset, bannerWidth, bannerHeight, 10);
-
-      // Message text
-      p.noStroke();
-      p.fill(255, 215, 0, alpha);
-      p.textAlign(p.CENTER, p.CENTER);
-      p.textSize(24);
-      p.textStyle(p.BOLD);
-      p.text(notif.message, p.width / 2, yOffset + bannerHeight / 2);
+    } else {
+      notificationElement.classList.remove("show");
     }
   };
 
@@ -168,6 +142,12 @@ export class UIRenderer {
    */
   renderGameOver = (context: GameContext, p: P5): void => {
     const { scoreState, waveState } = context;
+
+    // Hide HUD when game is over
+    const hudElement = document.getElementById("gameHUD");
+    if (hudElement) {
+      hudElement.classList.add("hidden");
+    }
 
     // Semi-transparent overlay
     p.fill(0, 0, 0, 220);
@@ -295,6 +275,24 @@ export class UIRenderer {
       return [255, 215, 0]; // Yellow - time running low
     } else {
       return [255, 100, 100]; // Red - critical time
+    }
+  };
+
+  /**
+   * Get hex color for time display (for HTML elements)
+   */
+  private getTimeColorHex = (
+    remainingTime: number,
+    totalTime: number,
+  ): string => {
+    const ratio = remainingTime / totalTime;
+
+    if (ratio > 0.5) {
+      return "#64ff64"; // Green - plenty of time
+    } else if (ratio > 0.25) {
+      return "#ffd700"; // Yellow - time running low
+    } else {
+      return "#ff6464"; // Red - critical time
     }
   };
 }

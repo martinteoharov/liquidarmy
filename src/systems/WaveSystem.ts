@@ -68,20 +68,15 @@ export class WaveSystem {
   public update = (soldiers: Soldier[]): boolean => {
     const { waveState, enemyTeam } = this.context;
 
-    // Count remaining enemy soldiers
+    // Count remaining enemy soldiers (use alive property)
     const enemyCount = soldiers.filter(
-      (s) => s.isAlive && s.teamIndex === TeamId.BLUE,
+      (s) => s.alive && s.teamIndex === TeamId.BLUE,
     ).length;
 
+    // Update enemy count in wave state
     waveState.enemiesRemaining = enemyCount;
 
-    // Check if wave is complete
-    if (enemyCount === 0 && !waveState.isTransitioning) {
-      this.completeWave();
-      return false;
-    }
-
-    // Handle wave transition
+    // Handle wave transition first
     if (waveState.isTransitioning) {
       const transitionDuration = this.getTransitionDuration();
       if (
@@ -90,6 +85,12 @@ export class WaveSystem {
       ) {
         this.startNextWave(soldiers);
       }
+      return false;
+    }
+
+    // Check if wave is complete (all enemies dead)
+    if (enemyCount === 0 && !waveState.isTransitioning) {
+      this.completeWave();
       return false;
     }
 

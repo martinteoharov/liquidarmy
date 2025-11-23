@@ -193,13 +193,14 @@ const sketch = (p: any) => {
     rewardSystem = new RewardSystem(p, context);
     context.rewardState = rewardSystem.initializeRewardState();
 
-    // Connect reward system to other systems
-    combat.setRewardSystem(rewardSystem);
-    physics.setRewardSystem(rewardSystem);
-
     // Generate map
     obstacles = generateMap(p);
     console.log(`Generated maze map with ${obstacles.length} obstacles`);
+
+    // Connect reward system to other systems and obstacles
+    combat.setRewardSystem(rewardSystem);
+    physics.setRewardSystem(rewardSystem);
+    rewardSystem.setObstacles(obstacles);
 
     // Spawn player soldiers
     soldiers = gameStateManager.spawnPlayerSoldiers(particlesPerTeam, p);
