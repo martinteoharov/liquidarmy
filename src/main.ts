@@ -205,8 +205,11 @@ const sketch = (p: any) => {
     soldiers = gameStateManager.spawnPlayerSoldiers(particlesPerTeam, p);
     console.log(`Spawned ${soldiers.length} player soldiers`);
 
-    // Spawn first wave of enemies
-    waveSystem.update(soldiers);
+    // Spawn first wave of enemies directly (don't call update)
+    waveSystem.spawnWaveEnemies(soldiers);
+    console.log(
+      `Spawned wave ${context.waveState.currentWave} with ${context.waveState.enemiesInWave} enemies`,
+    );
 
     context.gameState = GameState.PLAYING;
   };

@@ -1,0 +1,7 @@
+# Digital Ocean Static Site Configuration
+static_sites:
+  - name: liquid-wars
+    build_command: npm install && npm run build
+    output_dir: .
+    index_document: index.html
+    error_document: index.html

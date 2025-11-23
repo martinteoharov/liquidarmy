@@ -3,10 +3,12 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "bun run typecheck && bun build src/main.ts --outdir dist --target browser",
+    "build": "npm run typecheck && npm run build:game",
+    "build:game": "bun build src/main.ts --outdir dist --target browser && cp dist/main.js game.js && cp node_modules/p5/lib/p5.min.js p5.min.js",
     "typecheck": "tsc --noEmit",
     "dev": "bun run build && bun run index.ts",
-    "start": "bun run index.ts"
+    "start": "bun run index.ts",
+    "do:build": "npm install && npm run build"
   },
   "devDependencies": {
     "@types/bun": "latest",
