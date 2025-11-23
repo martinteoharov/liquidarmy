@@ -3,8 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "npm run typecheck && npm run build:game",
+    "build": "npm run typecheck && npm run build:game && npm run build:static",
     "build:game": "node build.js && cp node_modules/p5/lib/p5.min.js p5.min.js",
+    "build:static": "mkdir -p _static && cp index.html game.js p5.min.js background.svg _static/",
     "build:local": "bun build src/main.ts --outdir dist --target browser && cp dist/main.js game.js && cp node_modules/p5/lib/p5.min.js p5.min.js",
     "typecheck": "tsc --noEmit",
     "dev": "bun run build:local && bun run index.ts",

@@ -1,12 +1,10 @@
-name: liquidarmy
-static_sites:
-  - name: liquidarmy
+spec:
+  name: liquidarmy
+  static_sites:
+  - name: web
     github:
       repo: martinteoharov/liquidarmy
       branch: main
       deploy_on_push: true
     build_command: npm install && npm run build
-    output_dir: _static
-    environment_slug: node-js
-    routes:
-      - path: /
+    output_dir: /
